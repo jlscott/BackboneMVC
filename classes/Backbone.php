@@ -59,7 +59,7 @@ class Backbone implements BackBoneInterface
         }
         if($inFunctionOptionsArray != null)
         {
-            $result = self::handleOptionsArray($model, $inFunctionOptionsArray);
+            $result = self::handleOptionsArraySerialize($model, $inFunctionOptionsArray);
         }
         else
         {
@@ -73,12 +73,17 @@ class Backbone implements BackBoneInterface
     
     
     /**
-     * @method - serializeCollection - handles the case when a collection of eloqent models is passed in to serialize. This
+     * @method - serializeCollection- handles the case when a collection of eloqent models is passed in to serialize. This
      * method loops over the values of the array makes sure they are eloquent models and then serilizes each and pushes it
      * onto the result array.
      * 
      * @param type $collection - an array of eloquent models to be serialized.
      * @param type $options - an array of options for when serializing models. Default is null and is not necessary.
+     *    associative value - 'except' - array of named properties to not include in the serialization.
+     *                      - 'only'   - array of named properties to be the only ones
+     *                                      serialized. Overrides 'except'
+     *                      - 'on'     - array that can have a callable string or closure
+     *                                   to change the value at a given property.
      * @return array - an array that contains all of the models that were passed into the collection serialized.
      * 
      * @throws BackboneSerializationException
@@ -112,7 +117,7 @@ class Backbone implements BackBoneInterface
      * 
      * @author Jeffrey Scott
      */
-    private static function handleOptionsArray($model, $options)
+    private static function handleOptionsArraySerialize($model, $options)
     {
         $result = array();
         if(key_exists("only", $options))
@@ -146,17 +151,78 @@ class Backbone implements BackBoneInterface
     }
     
     /**
-     * @method
+     * @method deserialize - Takes a seralized array of one or more eloquent
+     *  models and populates them into the given $models passed in.
      * 
-     * @params
+     *  @param type $model - can either be an eloquent model or an eloquent collection to be populated.
+     *  @param type $data - the serialized array to populate the eloquent models with. an options
+     *          array can be set here to declare the different options.
+     *  @param type $options - array containing the different options and how they should be handled.
+     *      
      * 
-     * @return
+     * @return - eloqeunt model or eloquent collection of models.
+     * populated with the given serialized arrays and the options set.
      * 
      * @author - Jeffrey Scott
      */
     public static function deserialize($model, $data, $options = null)
     {
-        return "Deserialize";
+        if(!is_a($model, "Eloquent"))
+        {
+            if(is_array($model))
+            {
+               return self::deserializeCollection($model, $options);
+            }
+            else 
+            {
+                throw new BackboneSerializationException("The model has to extend Eloquent.");
+            }
+            
+        }
+        
+        $model->fill($data);
+        
+        return $model;
+    }
+    
+    /**
+     * 
+     * @method deserializeCollection
+     * 
+     * @param type $model
+     * @param type $data
+     * @param type $options
+     * 
+     * @return type $model
+     * 
+     */
+    private static function deserializeCollection($collection, $data, $options=null)
+    {
+        for($x=0; $x<count($collecton); $x++)
+        {
+            if(!is_a($collection[x],"Eloquent"))
+            {
+                throw new BackboneSerializationException("The model has to extend Eloquent.");
+            }
+            
+            self::deserialize($collection[x],$data[x], $options);
+            
+        }
+        
+        return $collection;
+    }
+    
+    /**
+     * @method handleOptionsArrayDeserialize
+     * 
+     * @param type $model
+     * @param type $options
+     * 
+     * @return type $model
+     */
+    private static function handleOptionsArrayDeserialize($model, $options)
+    {
+        
     }
 
 }

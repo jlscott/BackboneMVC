@@ -19,9 +19,13 @@ class Backbone implements BackBoneInterface
      *  models and serializes it so it can be stored and passed. According to the options
      *  passed will affect how the serialization is handled.
      * 
-     * @params
-     *      $model - 
-     *      $options - default null - 
+     * @param type $model - an eloquent model or eloquent collection to be serialized. 
+     * @param type $options - an array of options for when serializing models. Default is null and is not necessary.
+     *    associative value - 'except' - array of named properties to not include in the serialization.
+     *                      - 'only'   - array of named properties to be the only ones
+     *                                      serialized. Overrides 'except'
+     *                      - 'on'     - array that can have a callable string or closure
+     *                                   to change the value at a given property.
      * 
      * @return An associative array that corresponds to the passed in model and options
      * 
@@ -158,6 +162,12 @@ class Backbone implements BackBoneInterface
      *  @param type $data - the serialized array to populate the eloquent models with. an options
      *          array can be set here to declare the different options.
      *  @param type $options - array containing the different options and how they should be handled.
+     *    associative key 'MatchonIDs' - trys to match the model id to the id in the $data, if not
+     *                                   the data is populated straight over.
+     *                    'except' - array of model attributes to not populate.
+     *                    'only'   - array of model attributes which are the only ones populated. This
+     *                               overrides the 'except' deserialize option.
+     *                    'on'     - 
      *      
      * 
      * @return - eloqeunt model or eloquent collection of models.
@@ -171,7 +181,7 @@ class Backbone implements BackBoneInterface
         {
             if(is_array($model))
             {
-               return self::deserializeCollection($model, $options);
+               return self::deserializeCollection($model, $data, $options);
             }
             else 
             {
@@ -187,7 +197,9 @@ class Backbone implements BackBoneInterface
     
     /**
      * 
-     * @method deserializeCollection
+     * @method deserializeCollection - checks to see if the collection needs to match the data depending
+     *  on the ids, if not populates them straight up. Calls deserialize on each model. They all have to 
+     *  be an eloquent model or else it throws an error.
      * 
      * @param type $model
      * @param type $data
@@ -195,17 +207,20 @@ class Backbone implements BackBoneInterface
      * 
      * @return type $model
      * 
+     * 
+     * @author Jeffrey Scott
+     * 
      */
     private static function deserializeCollection($collection, $data, $options=null)
     {
-        for($x=0; $x<count($collecton); $x++)
+        for($x=0; $x<count($collection); $x++)
         {
-            if(!is_a($collection[x],"Eloquent"))
+            if(!is_a($collection[$x],"Eloquent"))
             {
                 throw new BackboneSerializationException("The model has to extend Eloquent.");
             }
-            
-            self::deserialize($collection[x],$data[x], $options);
+            //var_dump($data);
+            self::deserialize($collection[$x],$data[$x], $options);
             
         }
         
@@ -219,8 +234,10 @@ class Backbone implements BackBoneInterface
      * @param type $options
      * 
      * @return type $model
+     * 
+     * @author Jeffrey Scott
      */
-    private static function handleOptionsArrayDeserialize($model, $options)
+    private static function handleOptionsArrayDeserialize($model, $data, $options)
     {
         
     }
@@ -232,29 +249,3 @@ class Backbone implements BackBoneInterface
 
 
 
-<!--// look a lot more at eloquent it should be able to help out greatly.
-            // probably will give me exactly what I need with out much trouble.
-            // next step is to really look at eloquent. it will do the transformations for me quite a bit probably
-            // 
-            //is_object
-            //is_a     and use for checking if it is a eloquent model
-            //.property_exists($class, $property)
-
-            //change except to hidden to match eloquents?? or add any exceptions to the hidden attribute.
-            // that would hide the implementation a bit more, but not really if they have to use an eloquent model
-            // anyways. Ask Jason about it.-->
-           
-<!--            if(property_exists($model, "theAnswer"))
-            {
-
-                //return $model->theAnswer;
-                //return "\nTrue from serialize: ";
-                $result = $result.strval($model->theAnswer);
-            }
-            if(is_array($options))
-            {
-                $result = $result. "</br> Options is an array of size ". strval(count($options));
-                $result = $result."</br>".strval($options[0]).", ".strval($options[1]).", ".strval($options[2]);
-
-            }
-            return $result;-->

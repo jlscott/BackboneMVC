@@ -190,7 +190,26 @@ class Backbone implements BackBoneInterface
             
         }
         
-        $model->fill($data);
+        
+        $inFunctionOptionsArray= null;
+        $className = get_class($model);
+        if($options != null && is_array($options) )
+        {
+            $inFunctionOptionsArray = $options;
+            //echo "</br>in options equals parameter options</br>";
+        }
+        else if($className::$serialize != null /*&& is_array($model->serialize)*/)
+        {
+            $inFunctionOptionsArray = $className::$serialize;
+        }
+        if($inFunctionOptionsArray != null)
+        {
+            $model = self::handleOptionsArrayDeserialize($model, $data, $inFunctionOptionsArray);
+        }
+        else
+        {
+            $model->fill($data);
+        }
         
         return $model;
     }
@@ -201,11 +220,11 @@ class Backbone implements BackBoneInterface
      *  on the ids, if not populates them straight up. Calls deserialize on each model. They all have to 
      *  be an eloquent model or else it throws an error.
      * 
-     * @param type $model
-     * @param type $data
-     * @param type $options
+     * @param type $model - Eloquent Model or collection to be populated with serialized data
+     * @param type $data  - associative array to be used to populate the model or collection
+     * @param type $options - different options to be used
      * 
-     * @return type $model
+     * @return type $model - fully populated models
      * 
      * 
      * @author Jeffrey Scott
@@ -228,18 +247,48 @@ class Backbone implements BackBoneInterface
     }
     
     /**
-     * @method handleOptionsArrayDeserialize
+     * @method handleOptionsArrayDeserialize - any special options according to deserialize
+     * will be taken care of in this method.
      * 
-     * @param type $model
-     * @param type $options
+     * @param type $model- eloquent model
+     * @param type $data - associative array of data to fill one eloquent model
+     * @param type $options - the different options to be used in populating the model. 
      * 
-     * @return type $model
+     * @return type $model - populated with the data according to the options
      * 
      * @author Jeffrey Scott
      */
     private static function handleOptionsArrayDeserialize($model, $data, $options)
     {
+        if(key_exists("only", $options))
+        {
+            $dataOnly = array_only($data, $options["only"]);
+            $model->fill($dataOnly);
+        }
+        else if(key_exists("except", $options))
+        {
+            $dataExcept = array_except($data, $options["except"]);
+            $model->fill($dataExcept);
+            
+        }
+        else
+        {
+            $model->fill($data);
+        }
+
+        if(key_exists("on", $options))
+        {
+            foreach($options["on"] as $index => $one)
+            {
+                if(is_callable($one))
+                {
+                    $model->set_attribute($index, call_user_func($one, $model->$index));
+                }
+            }
+            
+        }
         
+        return $model;
     }
 
 }
